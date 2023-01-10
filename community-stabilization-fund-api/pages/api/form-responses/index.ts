@@ -1,10 +1,9 @@
-import { HttpStatusCode } from "axios";
-import { ApiError } from "next/dist/server/api-utils";
+import { HttpStatusCode } from 'axios';
+import { ApiError } from 'next/dist/server/api-utils';
 
-import { executeQuery, queries } from "../../../src/db";
+import { executeQuery, queries } from '../../../src/db';
 
-import type { NextApiHandler, NextApiRequest, NextApiResponse } from "next";
-
+import type { NextApiHandler, NextApiRequest, NextApiResponse } from 'next';
 
 const responses: FormResponse[] = [];
 
@@ -25,14 +24,14 @@ type FormResponse = {
     isNeeded: boolean;
     householdMembers: number;
     items: string[];
-  }
+  };
   itemRequests: string;
   additionalInformation: string;
   isPickUp: boolean;
   isVolunteering: boolean;
   isSubscribing: boolean;
   isJoining: boolean;
-}
+};
 
 const formResponseHandler = (req: NextApiRequest, res: NextApiResponse) => {
   const { method, body, url } = req;
@@ -55,50 +54,50 @@ const getAllFormResponses = async (res: NextApiResponse, url?: string) => {
   const sql = queries.makeGetAllSql('form_responses');
 
   try {
-    const form_responses = await executeQuery({sql});
-    console.log({form_responses});
-    
-    return res.json([...form_responses]);
+    const form_responses: FormResponse[] = await executeQuery({ sql });
+    console.log({ form_responses });
+
+    return res.json(form_responses ? [...form_responses] : []);
   } catch (error) {
     errorHandler(error, res, url);
   }
 };
 
-const createFormResponse = (body: FormResponse, res: NextApiResponse) => res.status(201).send('Successfully created form response with id: ' + body.id);
+const createFormResponse = async (body: FormResponse, res: NextApiResponse) => {
+  try {
+    const response = await executeQuery({
+      sql: queries.makeFormResponse(body),
+    });
+    return res.json(response);
+  } catch (error) {
+    console.log(error);
+  }
+  // return res
+  //   .status(201)
+  //   .send('Successfully created form response with id: ' + body.id);
+};
 
 export default formResponseHandler;
 
 // TODO: Extract to its own file
 
-export function getExceptionStatus(
-  exception: unknown
-) {
+export function getExceptionStatus(exception: unknown) {
   return exception instanceof ApiError
     ? exception.statusCode
     : HttpStatusCode.InternalServerError;
 }
 
-export function getExceptionMessage(
-  exception: unknown
-) {
-  return isError(exception) ?
-    exception.message : `Internal Server Error`;
+export function getExceptionMessage(exception: unknown) {
+  return isError(exception) ? exception.message : `Internal Server Error`;
 }
 
-export function getExceptionStack(
-  exception: unknown
-) {
-  return isError(exception) ?
-    exception.stack : undefined;
+export function getExceptionStack(exception: unknown) {
+  return isError(exception) ? exception.stack : undefined;
 }
 
-export function isError(
-  exception: unknown
-): exception is Error {
+export function isError(exception: unknown): exception is Error {
   return exception instanceof Error;
 }
-
-
 
 function errorHandler(exc: any, res: NextApiResponse, url?: string) {
   const statusCode = getExceptionStatus(exc);
@@ -123,7 +122,7 @@ function errorHandler(exc: any, res: NextApiResponse, url?: string) {
 
 export async function withErrorHandler(
   req: NextApiRequest,
-  res: NextApiResponse,
+  res: NextApiResponse
 ) {
   return async function (handler: NextApiHandler) {
     try {
